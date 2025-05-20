@@ -112,3 +112,12 @@ client.login(DISCORD_TOKEN).catch((err) => {
   // ⚠️ 建議先不 exit，好觀察 Zeabur log
   // process.exit(1);
 });
+
+// 🛡 捕捉未處理的錯誤，避免 Zeabur crash 不知原因
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("🛑 未捕捉的 Promise 錯誤：", reason);
+});
+
+process.on("uncaughtException", (err) => {
+  console.error("🧨 未捕捉的例外錯誤：", err);
+});
