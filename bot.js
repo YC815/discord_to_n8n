@@ -155,7 +155,7 @@ client.on("messageCreate", async (message) => {
     );
   } catch (err) {
     console.error("❌ 加身份組時錯誤：", err);
-    message.reply("❌ 加身份組失敗，請檢查 webhook 或 Discord 權限");
+    // message.reply("❌ 加身份組失敗，請檢查 webhook 或 Discord 權限");
   }
 });
 
