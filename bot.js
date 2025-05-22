@@ -14,6 +14,7 @@ const {
   DISCORD_TOKEN,
   CLIENT_ID,
   N8N_WEBHOOK_URL,
+  N8N_WEBHOOK_DISCORD_ID_URL,
   ADMIN_CHANNEL_ID,
   MEMBER_ROLE_NAME,
 } = process.env;
@@ -22,11 +23,20 @@ console.log("📦 環境變數加載情況：");
 console.log("  DISCORD_TOKEN:", DISCORD_TOKEN ? "[OK]" : "[缺失]");
 console.log("  CLIENT_ID:", CLIENT_ID || "[缺失]");
 console.log("  N8N_WEBHOOK_URL:", N8N_WEBHOOK_URL || "[缺失]");
+console.log(
+  "  N8N_WEBHOOK_DISCORD_ID_URL:",
+  N8N_WEBHOOK_DISCORD_ID_URL || "[缺失]"
+);
 console.log("  ADMIN_CHANNEL_ID:", ADMIN_CHANNEL_ID || "[缺失]");
 console.log("  MEMBER_ROLE_NAME:", MEMBER_ROLE_NAME || "[缺失]");
 
-if (!DISCORD_TOKEN || !CLIENT_ID || !N8N_WEBHOOK_URL) {
-  console.error("❗ 請確認已設定所有環境變數");
+if (
+  !DISCORD_TOKEN ||
+  !CLIENT_ID ||
+  !N8N_WEBHOOK_URL ||
+  !N8N_WEBHOOK_DISCORD_ID_URL
+) {
+  console.error("❗ 請確認已設定所有必要環境變數");
   process.exit(1);
 }
 
@@ -87,10 +97,12 @@ client.on("interactionCreate", async (interaction) => {
       });
       const data = await response.json();
 
-      if (data.status === "error") {
-        await interaction.followUp(`❌ 查無資料：\`${id}\``);
-      } else if (data.status === "ok") {
+      if (data.status === "ok") {
         await interaction.followUp(`✅ 查詢成功：\`${id}\` - ${data.name}`);
+      } else if (data.status === "pending") {
+        await interaction.followUp(`⏳ 查詢中，請稍候...`);
+      } else if (data.status === "error") {
+        await interaction.followUp(`❌ 查無資料：\`${id}\``);
       } else {
         await interaction.followUp(
           `⚠️ 無法辨識的回應：${JSON.stringify(data)}`
@@ -116,26 +128,26 @@ client.on("messageCreate", async (message) => {
   console.log(`🕵️ 偵測到 whitelist add 指令：${mcId}`);
 
   try {
-    const response = await fetch(N8N_WEBHOOK_URL, {
+    const response = await fetch(N8N_WEBHOOK_DISCORD_ID_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id: mcId }),
     });
     const data = await response.json();
 
-    if (!data || !data.discordId) {
-      console.warn("❌ 無法從 webhook 拿到 Discord ID");
-      return message.reply(`⚠️ 找不到 ${mcId} 對應的 Discord 使用者`);
-    }
+    // if (!data || !data.discordId) {
+    //   console.warn("❌ 無法從 webhook 拿到 Discord ID");
+    //   return message.reply(`⚠️ 找不到 ${mcId} 對應的 Discord 使用者`);
+    // }
 
     const member = await message.guild.members.fetch(data.discordId);
     const role = message.guild.roles.cache.find(
       (r) => r.name === MEMBER_ROLE_NAME
     );
 
-    if (!member || !role) {
-      return message.reply("❌ 找不到成員或身分組");
-    }
+    // if (!member || !role) {
+    //   return message.reply("❌ 找不到成員或身分組");
+    // }
 
     await member.roles.add(role);
     await message.reply(
